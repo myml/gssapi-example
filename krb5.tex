@@ -1,0 +1,208 @@
+\documentclass[a4paper]{scrartcl}
+\usepackage{xltxtra}
+\usepackage{plantuml}
+\usepackage{listings}
+\usepackage[UTF8,noindent]{ctex}
+\usepackage[colorlinks,linkcolor=blue]{hyperref}
+
+% \setmainfont[Mapping=tex-text]{WenQuanYi Micro Hei}
+\begin{document}
+\tableofcontents
+\clearpage
+\section{Kerberos、GSSAPI和SPNEGO}
+\begin{plantuml}
+    @startuml
+    left to right direction
+    (GSSAPI) <|.. (Kerberos): 实现
+    (SPNEGO) --> (GSSAPI): 依赖
+    @enduml
+\end{plantuml}
+\\
+GSSAPI是一种安全机制，定义了通用的安全接口规范。应用可以使用GSSAPI创建安全的上下文进行身份验证，而不用关心安全的实现细节。
+\\
+\\
+Kerberos是一个协议，并实现了GSSAPI的接口，也代指其具体实现服务程序MIT Kerberos(krb5)。
+\\
+支持的应用有ssh、pam、nfs、curl、postgresql、mysql、hadoop、chrome、firfox、nginx、ad域等
+\\
+Kerberos协议允许使用对称密钥加密在非安全的传输层进行双向身份验证，kerberos需要一个可信的第三方密钥分发中心（KDC）。
+\\\\
+\begin{plantuml}
+@startuml
+主体A -> KDC: 我是主体A，想访问主体B
+主体A <-- KDC: 给你一个会话密钥，用主体A的密钥加密了 \n 给你一个授权票据，用主体B的密钥加密了
+note right
+验证主体A的身份，同时也能证明自己的身份
+授权票据给主体B的，主体A不需要知道内容
+end note
+主体A -> 主体A: 用自己的密钥（密码的哈希）解密会话密钥
+主体A -> 主体B: 会话密钥加密{我是主体A}，这是KDC给我的授权票据
+主体B -> 主体B: 用自己的密钥解密授权票据，从票据中获取会话密钥 \n 用会话密钥解密主体A的消息，验证主体A的身份
+主体A <- 主体B: 会话密钥加密{我是主体B}
+note right
+证明自己的身份
+end note
+@end
+\end{plantuml}
+\\
+SPNEGO是一种认证协商的协议，用于自动选择认证方式并简化了认证流程，通常选择项是Kerberos和NTLM，可在浏览器中基于HTTP协议进行验证。
+\clearpage
+\section{kerberos协议}
+KDC包含认证服务和授权服务，他们知道自己的密钥，也知道其他主体的密钥，其他主体只需要知道自己的密钥。\\\\
+\begin{plantuml}
+    @startuml
+    box "KDC"
+    participant 认证服务 order 2
+    participant 授权服务 order 3
+    end box
+    participant 客户端 order 1
+    participant 第三方服务 order 0
+    autonumber
+    客户端 -> 认证服务: 请求认证
+    note right
+    附带用户ID（用户名或邮箱）
+    end note
+    客户端 <-- 认证服务: 授权会话密钥
+    note right
+    一个授权会话密钥K1（使用用户密钥加密）
+    end note
+    客户端 <-- 认证服务: 授权会话票据
+    note right
+    一个授权票据P1（授权密钥加密）
+    包含用户ID等认证信息，还有流程2中的K1
+    end note
+    客户端 -> 客户端: 解密
+    note right
+    使用用户密钥解密得到授权会话密钥K1
+    end note
+    客户端 -> 授权服务: 请求授权
+    note right
+    用户唯一标识(使用授权会话密钥K1加密)
+    流程3中的票据P1
+    end note
+    授权服务 -> 授权服务: 解密
+    note left
+    使用授权密钥解密P1
+    取出会话密钥K1再解密出用户标识
+    end note
+    客户端 <-- 授权服务: 第三方服务会话密钥
+    note right
+    一个服务会话密钥K2（授权会话密钥加密）
+    end note
+    客户端 <-- 授权服务: 第三方服务会话票据
+    note right
+    一个授权票据P2（第三方服务密钥加密）
+    包含用户ID等认证信息，还有流程7中的K2
+    end note
+    客户端 -> 第三方服务: 登录
+    第三方服务 -> 第三方服务: 解密
+    note right
+    使用服务密钥解密P2，取出服务会话密钥K2
+    再服务会话密钥K2解密出用户标识
+    end note
+    客户端 <-- 第三方服务: 登录成功
+    
+    @enduml
+\end{plantuml}    
+\\\\
+经过授权认证后，客户端信任第三方服务，第三方服务也信任客户端。
+使用对称加密存在密码爆破的问题，认证授权过程中加入临时生成的会话密钥减少被攻击的可能性，会话密钥有一段有效期，也能提升性能。
+\clearpage
+
+\section{kerberos优点和缺点}
+\begin{itemize}
+    \item 密钥不会被窃听\\
+    密钥不经过网络传播，票据对应到每个主机，内部使用哈希加盐的方式存储密钥。
+    \item 配置复杂\\
+    服务端配置较为复杂，客户端也需要进行配置。
+    \item 单点登录\\
+    只需输入密码验证一次，任何使用geeapi的应用都可以自动登录。
+    \item 单点故障\\
+    中心话的方式导致必须保证可用性，否则所有相关应用都会收到影响
+    \item 兼容性广泛\\
+    可应用于各个基础设施，甚至是操作系统，而不仅仅是web。
+    \item 很旧的协议\\
+    九十年代的协议，广泛的应用，意味着更大的攻击范围
+\end{itemize}
+
+\clearpage
+\section{SPNEGO编程}
+SPNEGO用于C/S在未知对方支持的身份认证协议的情况下，协商认证协议使用的，有微软制定，得到所有主流浏览器支持，安全认证协议一般选项有NTLM和Kerberos，NTLM因为加密算法太弱，已不推荐使用。
+\\
+SPNEGO使用gssapi接口进行安全认证，并通过http头传递认证token。
+\\
+网站对接SPNEGO不需要和KDC通信，但需要配置从KDC导出的密钥，用于解密授权token。
+\\
+SPNEGO提供单点登录但不提供传输加密，需使用https保护连接。
+\subsection{使用范例}
+\begin{lstlisting}[language={bash}]
+curl --negotiate -vv -u : http://b.example.com:8080
+google-chrome-stable --auth-server-whitelist="*example.com"
+\end{lstlisting}
+
+\begin{plantuml}
+    @startuml
+        浏览器 -> 网站: 访问
+        浏览器 <-- 网站: 401
+        note right
+        头信息
+        Www-Authenticate: Negotiate
+        end note
+        浏览器 -> kerberos: 申请授权
+        note left
+        gssapi接口
+        end note
+        return
+        浏览器 -> 网站: 访问
+        note right
+        头信息
+        Authorization: Negotiate base64(token)
+        end note
+        网站 -> 网站: 验证token并获取授权信息
+        return 认证通过
+    @enduml
+\end{plantuml}
+\clearpage
+\section{GSSAPI编程}
+\subsection{GSSAPI客户端开发}
+
+\begin{itemize}
+    \item 初始环境，配置krb5 user
+    \item 使用kinit命令进行登录
+    \item 使用 gss\_import\_name 函数导入服务名
+    \item 使用gss\_init\_sec\_context初始化上下文，获取output token
+    \item 将output token发送到服务端，并读取返回的input token
+    \item 再次执行gss\_init\_sec\_context并传入input token
+\end{itemize}
+
+\subsection{GSSAPI客户端开发}
+\begin{itemize}
+    \item 配置密钥路径到环境遍历
+    \item 接收客户端发送的input token
+    \item 使用gss\_accept\_sec\_context初始化上下文，并传入input token
+    \item 将output token发送到客户端
+\end{itemize}
+\begin{plantuml}
+    @startuml
+    客户端 -> 客户端: gss_init_sec_context
+    客户端 -> 服务端: 发送output token
+    服务端 -> 服务端: gss_accept_sec_context
+    服务端 --> 客户端: 发送output token
+    客户端 -> 客户端: gss_init_sec_context
+    @enduml
+\end{plantuml}
+\clearpage
+\section{参考链接}
+\href{https://tools.ietf.org/html/rfc2743}{GSSAPI规范}
+\\
+\href{https://tools.ietf.org/html/rfc4178}{SPNEGO规范}
+\\
+\href{https://tools.ietf.org/html/rfc4121}{Kerberos规范}
+\\
+\href{https://github.com/pbrezina/gssapi-auth}{GSSAPI编程示例(c语言)}
+\\
+\href{https://github.com/myml/gssapi-example}{GSSAPI编程示例(cgo)}
+\\
+\href{https://github.com/myml/gssapi-example}{SPNEGO编程示例(golang)}
+\clearpage
+\end{document}
