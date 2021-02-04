@@ -124,6 +124,24 @@ KDC包含认证服务和授权服务，他们知道自己的密钥，也知道�
     \item 很旧的协议\\
     九十年代的协议，广泛的应用，意味着更大的攻击范围
 \end{itemize}
+\section{Kerberos常用操作}
+\begin{lstlisting}[language={bash}]
+# 登录
+kinit admin/admin@EXAMPLE.COM
+# 查看票据
+klist
+# 登出
+kdestroy
+# 进入管理员界面
+kadmin
+    # 创建主体（使用随机密码）
+    addprinc -randkey HTTP/b.example.com@EXAMPLE.COM
+    # 查看主体列表
+    listprincs
+    # 导出到密钥表
+    ktadd -k b.keytab HTTP/b.example.com@EXAMPLE.COM
+
+\end{lstlisting}
 
 \clearpage
 \section{SPNEGO编程}
