@@ -1,4 +1,4 @@
-# 这是一个使用 golang 对接 gssapi 和 spnego 的例子
+# 这是使用 golang 对接 gssapi 和 spnego 的例子
 
 提前在 kerberos 创建 HTTP/b.example.com@EXAMPLE.COM主体，并导出 keytab 到~/b.keytab
 
