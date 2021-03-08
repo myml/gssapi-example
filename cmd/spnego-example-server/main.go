@@ -27,7 +27,7 @@ func main() {
 	}
 
 	engine := gin.Default()
-	engine.Use(authSpnego(keytabFile))
+	engine.Use(authSPNEGO(keytabFile))
 	engine.GET("/", func(c *gin.Context) {
 		creds := c.MustGet(KEY).(goidentity.Identity)
 		c.JSON(200, gin.H{
@@ -41,7 +41,7 @@ func main() {
 	engine.Run(listen)
 }
 
-func authSpnego(keytabFile string) gin.HandlerFunc {
+func authSPNEGO(keytabFile string) gin.HandlerFunc {
 	kt := keytab.New()
 	b, err := ioutil.ReadFile(keytabFile)
 	if err != nil {

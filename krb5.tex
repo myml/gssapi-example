@@ -25,7 +25,7 @@ Kerberos是一个协议，并实现了GSSAPI的接口，也代指其具体实现
 \\
 支持的应用有ssh、pam、nfs、curl、postgresql、mysql、hadoop、chrome、firfox、nginx、ad域等
 \\
-Kerberos协议允许使用对称密钥加密在非安全的传输层进行双向身份验证，kerberos需要一个可信的第三方密钥分发中心（KDC）。
+Kerberos协议允许使用对称密钥加密在非安全的传输层进行双向身份验证，需要一个可信的第三方密钥分发中心（KDC）。
 \\\\
 \begin{plantuml}
 @startuml
@@ -42,7 +42,7 @@ end note
 note right
 证明自己的身份
 end note
-@end
+@enduml
 \end{plantuml}
 \\
 SPNEGO是一种认证协商的协议，用于自动选择认证方式并简化了认证流程，通常选择项是Kerberos和NTLM，可在浏览器中基于HTTP协议进行验证。
