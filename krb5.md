@@ -150,7 +150,7 @@ SPNEGO 用于 B/S 在未知对方支持的身份认证协议的情况下，协�
     @enduml
 ```
 
-### 范例
+### 示例
 
 这里使用`github.com/jcmturner/gokrb5/v8/spnego`库创建支持 spengo 验证的 http 服务，实例代码可在 https://gitlabwh.uniontech.com/wurongjie/gssapi-example 查看
 
@@ -222,10 +222,10 @@ func authSPNEGO(keytabFile string) gin.HandlerFunc {
 }
 ```
 
-### 使用范例
+### 使用示例
 
 ```base
-# 需体检进行登录
+# 需提前进行登录
 kinit admin/admin@EXAMPLE.COM
 # curl支持
 curl --negotiate -vv -u : http://b.example.com:8080
@@ -267,7 +267,7 @@ SPNEGO 仅应用与 http/https 协议中，使用范围有限，更多基于 tcp
 
 ### 示例
 
-由于代码量过多，不适合贴到文档，可前往https://gitlabwh.uniontech.com/wurongjie/gssapi-example查看
+由于代码量过多，不适合贴到文档，可前往 https://gitlabwh.uniontech.com/wurongjie/gssapi-example 查看
 
 ## 参考资料
 
